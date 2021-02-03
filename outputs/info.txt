@@ -1,0 +1,2 @@
+This folder is kept empty. Is the place where the example output will be stored 
+
