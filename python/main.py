@@ -248,9 +248,7 @@ def cross_section_shape(tau, loc, Q, Omega1, rnd_seed, log_accuracy = 2, i_max =
     
     # initializing profile functions
     # ------------------------------
-    if (rnd_seed < 0): m = profile(Q, rnd_seed, central = True )
-    else:              m = profile(Q, rnd_seed, central = False )
-    
+    m = profile( Q, rnd_seed )
     
     # Profiles 
     # --------         

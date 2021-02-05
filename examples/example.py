@@ -59,7 +59,3 @@ print("++++++++++++++++++++++++++++++++++++++++++++++++++++++" )
 out_name = directory + "example_output.txt"
 
 np.savetxt(out_name,  fit , delimiter='\t')   # export data    
-
-
-
-

@@ -12,7 +12,7 @@ class profile:
         
         rnd.seed(rnd_seed) # sets the random seed for the non-central profiles (used in case of parallelization) 
 
-        if central :
+        if (rnd_seed < 0) :
             self.eH = 1.
             self.eJ = 0.
             self.eS = 0.
