@@ -399,7 +399,7 @@ def set_chi_single_a( loc, Q, bins, Y_exp, V_inv, rnd_seed ):
 
     return chi
 
-def set_chi_all_a( Q, bins, Y_exp, V_inv, rnd_seed ):
+def set_chi_all_a( Q, bins, Y_exp, V_inv, rnd_seed, norms_exp = 1, normalization = False ):
 
     def chi( a_Z, Omega1):
 
@@ -434,8 +434,11 @@ def set_chi_all_a( Q, bins, Y_exp, V_inv, rnd_seed ):
 
             Y_the_temp = bin_it( bin_list, loc, Q, Omega1, rnd_seed) /  sigmaT(Q)
 
-            Y_the = np.concatenate( (Y_the, Y_the_temp), axis = None)
-        
+            if (normalization): norm = norms_exp[loc]/np.sum(Y_the_temp)
+            else: norm = 1
+
+            Y_the = np.concatenate( (Y_the, norm * Y_the_temp), axis = None)
+
         D = Y_exp - Y_the
 
         return  np.dot(D, np.matmul (V_inv , D) )
@@ -480,7 +483,8 @@ def DSigmaDTau(tau, loc, Q, rnd_seed, a_Z =0.11, Omega1 = 0.4):
 
 ###############################################################################
 
-def experimental_input_all_a( bin_min, num_of_bins) :
+#--------------------------------------- 
+def experimental_input_all_a( bin_min, num_of_bins, include_norms = False) :
 
     bin_max = bin_min + num_of_bins 
 
@@ -489,6 +493,7 @@ def experimental_input_all_a( bin_min, num_of_bins) :
     E_exp = np.array([])
     bins  = []
     V_temp = []
+    norms_exp = []
 
     for loc in range(7): 
 
@@ -497,6 +502,7 @@ def experimental_input_all_a( bin_min, num_of_bins) :
         dataFile = "../exp_data/exp_data_" + str(loc) + ".txt"
         exp_data = np.genfromtxt(dataFile , delimiter='\t') 
         Y_exp = np.concatenate((Y_exp,  exp_data[bin_min[loc]: bin_max[loc],2]),     axis = 0)
+        norms_exp.append( np.sum(exp_data[bin_min[loc]: bin_max[loc],2]) )
         # s     = np.concatenate((s,      np.arange(bin_min[loc], bin_max[loc])  ), axis = 0)
         E_exp = (exp_data[bin_min[loc]: bin_max[loc], 4])**2
         S_exp = np.concatenate((S_exp, (exp_data[bin_min[loc]: bin_max[loc],3])**2), axis = 0)
@@ -527,7 +533,8 @@ def experimental_input_all_a( bin_min, num_of_bins) :
 
     V_inv = np.linalg.inv(V)
 
-    return [bins, Y_exp, V_inv]
+    if (include_norms): return [bins, Y_exp, V_inv, norms_exp]
+    else:  return [bins, Y_exp, V_inv]
 
 #--------------------------------------- 
 

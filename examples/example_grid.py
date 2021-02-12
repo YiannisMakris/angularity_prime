@@ -6,7 +6,7 @@
 #------------------------------------------------------------------------------
 
 import sys
-sys.path.append('../python_single_a/')
+sys.path.append('../python/')
 from main import *
 from param import *
 import os
@@ -22,17 +22,17 @@ run_id 		= int( sys.argv[3] )
 directory   = 	   sys.argv[4]
 job_id      = os.environ.get('SLURM_JOB_ID')
 
-bins, Y_exp, V_inv = experimental_input_all_a( bin_min_all_a, num_of_bins_all_a)
+bins, Y_exp, V_inv, norms_exp = experimental_input_all_a( bin_min_all_a, num_of_bins_all_a, include_norms = True)
 
 rnd_seed = -1
 
-chi = set_chi_all_a(Q, bins, Y_exp, V_inv, rnd_seed)
+chi = set_chi_all_a(Q, bins, Y_exp, V_inv, rnd_seed, norms_exp, normalization = True)
 
 cst = chi(a_Z, Omega1)
 
 grid_point = np.array([a_Z, Omega1, cst, run_id])
 
-out_name = directory + "output_"+ job_id +".txt"
+out_name = directory + "grid_norm_"+ job_id +".txt"
 
 np.savetxt(out_name,  grid_point , delimiter='\t')   # export data    
 
