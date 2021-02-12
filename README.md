@@ -8,4 +8,4 @@ A two dimensional fit by minimizing chi-squared is obtained for the strong coupl
 
 The minimization of the chi-squared distribution is obtained by:
 
-Constructing a 2-D grid (alpha_S, Omega_1) ---> Interpolation of the grid is perfomed using scipy.interpolate.bisplev ---> Minimize interpolated function using mygrad() method from  iinuit.Munuit 
+Constructing a 2-D grid (alpha_S, Omega_1) ---> Interpolation of the grid is perfomed using scipy.interpolate.bisplev ---> Minimize interpolated function using mygrad() method from  iminuit.Minuit 
