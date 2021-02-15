@@ -9,6 +9,7 @@ import kernels
 from newton_optimize import *
 import os
 import sys
+import glob
 from numpy import pi, log, exp, real, absolute, euler_gamma
 from scipy.special import psi, binom, gamma
 from scipy.integrate import newton_cotes as  nc
@@ -17,6 +18,7 @@ from scipy import interpolate
 from iminuit import Minuit
 
 ###############################################################################
+
 # Model function f_mod
 # --------------------
 
@@ -445,6 +447,56 @@ def set_chi_all_a( Q, bins, Y_exp, V_inv, rnd_seed, norms_exp = 1, normalization
 
     return chi
 
+def set_chi_thrust( bins, Y_exp, V_inv, Q_list, rnd_seed, norms_exp = 1, normalization = False ):
+
+    def chi( a_Z, Omega1):
+
+        Y_the = np.array([])
+
+        global a_s
+        a_s = set_alpha_S(a_Z , 2)
+
+        loc = 4    # loc = 4 corresponds to thrust at perturbative level 
+
+        # Seting global variables 
+        # -----------------------
+        global kJ, jJ, cJ, GJ, gJ, kS, cS, GS, gS, gR
+
+        kJ = kJ_a(loc)
+        jJ = jJ_a(loc)
+        cJ = cJ_a(loc)
+        GJ = GJ_a(loc)
+        gJ = gJ_a(loc)
+
+        kS = kS_a(loc)
+        cS = cS_a(loc)
+        GS = GS_a(loc)
+        gS = gS_a(loc)
+
+        gR = gR_a(loc)
+
+        global Omega, TK, Tk, Da
+        Omega, TK, Tk, Da = kernels.set_kernels(a_s, 2, kJ, jJ, cJ, GJ, gJ, kS, cS, GS, gS, gR)
+
+        for k in range(len(Q_list)):
+
+            bin_list = bins[k]
+
+            Q = Q_list[k]
+
+            Y_the_temp = bin_it( bin_list, loc, Q, Omega1, rnd_seed) /  sigmaT(Q)
+
+            if (normalization): norm = norms_exp[k]/np.sum(Y_the_temp)
+            else: norm = 1
+
+            Y_the = np.concatenate( (Y_the, norm * Y_the_temp), axis = None)
+
+        D = Y_exp - Y_the
+
+        return  np.dot(D, np.matmul (V_inv , D) )
+
+    return chi
+
 ###############################################################################
 
 def DSigmaDTau(tau, loc, Q, rnd_seed, a_Z =0.11, Omega1 = 0.4):
@@ -567,8 +619,8 @@ def experimental_input_single_a( loc, bin_min, num_of_bins ):
 
     # Covariance matrix (minimal-overlasp model)
     # -----------------------------------------
-    statistical =  (exp_data[bin_min: bin_max,3])**2
-    systematic  =  (exp_data[bin_min: bin_max,4])**2
+    statistical =  (exp_data[bin_min: bin_max,4])**2
+    systematic  =  (exp_data[bin_min: bin_max,6])**2
     V = np.zeros((num_of_bins,num_of_bins))
     for i in range(num_of_bins):
         for j in range (num_of_bins):
@@ -581,4 +633,58 @@ def experimental_input_single_a( loc, bin_min, num_of_bins ):
     V_inv = np.linalg.inv(V)
 
     return [bins, Y_exp, V_inv]
- 
+
+
+#--------------------------------------- 
+def experimental_input_thrust(include_norms = False) :
+
+    Y_exp = np.array([])
+    S_exp = np.array([])
+    E_exp = np.array([])
+    bins  = []
+    V_temp = []
+    norms_exp = []
+    Q_list = []
+
+    input_name = "../exp_data/thrust/*select.txt"
+
+    list=glob.glob(input_name)
+
+    for dataFile in list:
+        Q_list.append( float(dataFile.split("_")[-2].replace("p",".")) )
+
+        # Experimental data
+        # -----------------
+        exp_data = np.genfromtxt(dataFile , delimiter='\t') 
+        Y_exp = np.concatenate((Y_exp,  exp_data[:,3]),     axis = 0)
+        norms_exp.append( np.sum(exp_data[:,3]) )
+        E_exp = (exp_data[:, 5])**2
+        S_exp = np.concatenate((S_exp, (exp_data[:,4])**2), axis = 0)
+        if (exp_data[0,1] > exp_data[0,2] ): bins_temp = exp_data[:,[2,1]]
+        else: bins_temp = exp_data[:,[1,2]]
+        bins.append(  bins_temp )
+
+        # Covariance matrix (minimal-overlasp model)
+        # -----------------------------------------
+        num_of_points = len(bins_temp) 
+        
+        A = np.zeros((num_of_points, num_of_points))
+        for i in range(num_of_points):
+            for j in range (num_of_points):
+                if (i == j) :
+                    A[i,i] = E_exp[i]
+                else:
+                    A[i,j] = min(E_exp[i],E_exp[j])
+
+        V_temp.append(A)
+
+    S_exp = np.diag(S_exp)
+
+    V = block_diag(*V_temp) + S_exp
+
+    V_inv = np.linalg.inv(V)
+
+    if (include_norms): return [bins, Y_exp, V_inv, Q_list, norms_exp]
+    else:  return [bins, Y_exp, V_inv, Q_list]
+
+#--------------------------------------- 
