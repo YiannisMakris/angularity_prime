@@ -26,7 +26,7 @@ class profile:
             self.dc = 0
             self.dr = 0
             self.ns = 0
-            self.R_max = 10 
+            self.R_max = 100 
         else :     
             if hard_central:
                 self.eH = 1
@@ -44,7 +44,8 @@ class profile:
             self.dc = rnd.uniform(-1., 1.)
             self.dr = rnd.uniform(-1., 1.)
             self.ns = rnd.choice((-1, 0, 1))
-            self.R_max = 10
+            self.R_max = 100
+            
         #-----------------------------------
         self.Q = Q
         self.t0 = self.n0 / Q * 3.**avec

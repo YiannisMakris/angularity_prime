@@ -619,8 +619,8 @@ def experimental_input_single_a( loc, bin_min, num_of_bins ):
 
     # Covariance matrix (minimal-overlasp model)
     # -----------------------------------------
-    statistical =  (exp_data[bin_min: bin_max,4])**2
-    systematic  =  (exp_data[bin_min: bin_max,6])**2
+    statistical =  (exp_data[bin_min: bin_max,3])**2
+    systematic  =  (exp_data[bin_min: bin_max,4])**2
     V = np.zeros((num_of_bins,num_of_bins))
     for i in range(num_of_bins):
         for j in range (num_of_bins):
@@ -646,7 +646,7 @@ def experimental_input_thrust(include_norms = False) :
     norms_exp = []
     Q_list = []
 
-    input_name = "../exp_data/thrust/*select.txt"
+    input_name = "../exp_data/thrust_2/*select.txt"
 
     list=glob.glob(input_name)
 
@@ -656,12 +656,11 @@ def experimental_input_thrust(include_norms = False) :
         # Experimental data
         # -----------------
         exp_data = np.genfromtxt(dataFile , delimiter='\t') 
-        Y_exp = np.concatenate((Y_exp,  exp_data[:,3]),     axis = 0)
-        norms_exp.append( np.sum(exp_data[:,3]) )
-        E_exp = (exp_data[:, 5])**2
-        S_exp = np.concatenate((S_exp, (exp_data[:,4])**2), axis = 0)
-        if (exp_data[0,1] > exp_data[0,2] ): bins_temp = exp_data[:,[2,1]]
-        else: bins_temp = exp_data[:,[1,2]]
+        Y_exp = np.concatenate((Y_exp,  exp_data[:,2]),     axis = 0)
+        norms_exp.append( np.sum(exp_data[:,2]) )
+        E_exp = (exp_data[:, 4])**2
+        S_exp = np.concatenate((S_exp, (exp_data[:,3])**2), axis = 0)
+        bins_temp = exp_data[:,[0,1]]
         bins.append(  bins_temp )
 
         # Covariance matrix (minimal-overlasp model)
@@ -688,3 +687,23 @@ def experimental_input_thrust(include_norms = False) :
     else:  return [bins, Y_exp, V_inv, Q_list]
 
 #--------------------------------------- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
