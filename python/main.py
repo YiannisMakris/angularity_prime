@@ -244,22 +244,37 @@ def nc_integration( h, nc_points, f_points):
  
 # returns the conceived cross section at the value \tau
 # -----------------------------------------------------
-def cross_section_shape(tau, loc, Q, Omega1, rnd_seed, log_accuracy = 2, i_max = 100, width_factor = 5, nc_points = 5):  
+def cross_section_shape(tau, loc, Q, Omega1, rnd_seed, mit_scales = True, log_accuracy = 2, i_max = 100, width_factor = 5, nc_points = 5):  
     
     l = (2 / (1 - avec[loc]) * (Omega1 - initial_D)) # \lambda (1st moment of f_{mod})
     
     # initializing profile functions
     # ------------------------------
     m = profile( Q, rnd_seed )
-    
-    # Profiles 
-    # --------         
-    mS = m.soft(tau, loc)
-    mJ = m.jet(tau, loc)
-    RS = m.R_scale(tau, loc)
-    RStar =m.R_star(tau, loc)
-    mNS = m.mNS(tau, loc)
-    mH = m.hard()
+
+    if (mit_scales):
+
+        mit = m.create_MIT_profile()
+
+        # Profiles 
+        # --------  
+        mS = mit.soft(tau)
+        mJ = mit.jet(tau)
+        RS = mit.R_scale(tau)
+        RStar = mit.R_star(tau)
+        mNS = mit.mNS(tau)
+        mH = mit.hard()
+        
+    else: 
+        # Profiles 
+        # --------         
+        mS = m.soft(tau, loc)
+        mJ = m.jet(tau, loc)
+        RS = m.R_scale(tau, loc)
+        RStar =m.R_star(tau, loc)
+        mNS = m.mNS(tau, loc)
+        mH = m.hard()
+
     mF  = Q
     dr = 0   
  
@@ -687,23 +702,3 @@ def experimental_input_thrust(include_norms = False) :
     else:  return [bins, Y_exp, V_inv, Q_list]
 
 #--------------------------------------- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

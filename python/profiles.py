@@ -8,11 +8,14 @@ tsph_full = 2 / (4 - avec) * hyp2f1(1, - avec / 2, 3 - avec / 2, -1)  #symmetric
 
 class profile:
     
-    def __init__(self, Q, rnd_seed,  central = False, hard_central = False):
-        
-        rnd.seed(rnd_seed) # sets the random seed for the non-central profiles (used in case of parallelization) 
+    def __init__(self, Q, rnd_seed, hard_central = False):
 
-        if (rnd_seed < 0) :
+        self.rnd_seed = rnd_seed
+        self.Q = Q
+        
+        rnd.seed( self.rnd_seed ) # sets the random seed for the non-central profiles (used in case of parallelization) 
+
+        if (  self.rnd_seed < 0) :
             self.eH = 1.
             self.eJ = 0.
             self.eS = 0.
@@ -47,7 +50,6 @@ class profile:
             self.R_max = 100
             
         #-----------------------------------
-        self.Q = Q
         self.t0 = self.n0 / Q * 3.**avec
         self.t1 = self.n1 / Q * 3.**avec
         self.t2 = self.n2 * 0.295**(1 - 0.637 * avec)
@@ -70,28 +72,28 @@ class profile:
         
     #-----------------------------------
     def mrun(self, tau, a):       
-        if tau < self.t0[a] :
+        if tau <= self.t0[a] :
             return self.m0
-        elif (self.t0[a] < tau) and (tau < self.t1[a]):
+        elif (self.t0[a] < tau) and (tau <= self.t1[a]):
             return self.zi(tau,self.t0[a],self.m0,0,self.t1[a],0, self.r      \
             * self.hard()/tsph_full[a])
-        elif (self.t1[a] < tau) and (tau < self.t2[a]):
+        elif (self.t1[a] < tau) and (tau <= self.t2[a]):
             return self.r * self.hard() * tau / tsph_full[a]
-        elif (self.t2[a] < tau) and (tau < self.t3[a]):
+        elif (self.t2[a] < tau) and (tau <= self.t3[a]):
             return self.zi(tau, self.t2[a], 0, self.r * self.hard()/tsph_full[a],  \
             self.t3[a],  self.hard(),0)
         else :
             return self.hard()
     #-----------------------------------    
     def mrun_R(self, tau, a):        
-        if tau < self.t0[a] :
+        if tau <= self.t0[a] :
             return self.R0
-        elif (self.t0[a] < tau) and (tau < self.t1[a]):
+        elif (self.t0[a] < tau) and (tau <= self.t1[a]):
             return self.zi(tau,self.t0[a],self.R0,0,self.t1[a],0, self.r      \
             * self.hard()/tsph_full[a])
-        elif (self.t1[a] < tau) and (tau < self.t2[a]):
+        elif (self.t1[a] < tau) and (tau <= self.t2[a]):
             return self.r * self.hard() * tau / tsph_full[a]
-        elif (self.t2[a] < tau) and (tau < self.t3[a]):
+        elif (self.t2[a] < tau) and (tau <= self.t3[a]):
             return self.zi(tau, self.t2[a], 0, self.r * self.hard()/tsph_full[a],  \
             self.t3[a],  self.hard(),0)
         else :
@@ -138,12 +140,99 @@ class profile:
             return self.hard()
         else:
             return (3 * self.hard() - self.jet(tau, a)) / 2
-        
+
+    def create_MIT_profile(self):
+        return profile.MIT(self)
+
+
+    class MIT:
+
+        def __init__(self, profile):
+
+            self.rnd_seed = profile.rnd_seed
+            self.Q = profile.Q
+
+            #-----------------------------------
+
+            if (  self.rnd_seed < 0) :
+                self.eH = 1.
+                self.eJ = 0.
+                self.n1 = 5.
+                self.t2 = 0.25
+                self.m0 = 2.
+                self.R0 = self.m0 * (0.85)
+                self.ns = 0
+                self.R_max = 100 
+            else :     
+                self.eH = 2**(rnd.uniform(-1, 1))
+                self.eJ = rnd.uniform(-1, 1)
+                self.n1 = rnd.uniform(2, 8)
+                self.t2 = rnd.uniform(0.2, 0.3)
+                self.m0 = rnd.uniform(1.5, 2.5)
+                self.R0 = self.m0 * (0.85)
+                self.ns = rnd.choice((-1, 0, 1))
+                self.R_max = 100
+
+            self.t1 = self.n1 / self.Q
+            self.b  = 2* ( self.Q * self.eH - self.m0) / (self.t2 -self.t1 + 0.5)
+            self.d  = (self.m0 * (self.t2 + 0.5) - self.Q * self.eH * self.t1) / (self.t2 -self.t1 + 0.5)
+            self.m1 = (2* self.d - 2* self.R0 + self.b * self.t1) / self.t1
+            self.m2 = (-self.d + self.R0) / self.t1**2
+ 
+        #-----------------------------------
+        def hard(self):
+            return self.Q * self.eH
+
+        def soft(self,tau):
+            if (tau < self.t1):
+                return self.m0 + self.b  * (tau**2)  / (2*self.t1) 
+            elif (tau > self.t2):
+                return self.Q * self.eH - self.b * (0.5 - tau)**2 / (1-2*self.t2)
+            else: 
+                return self.b * tau +self.d
+
+        def jet(self, tau):
+            return (1+self.eJ * (0.5 - tau)**2) * ( self.hard() * self.soft(tau) )**(0.5)
+
+        def R_scale(self, tau):
+            if (tau <= self.t1):
+                return self.R0 + self.m1 * tau +self.m2 * tau**2
+            else : 
+                return self.soft(tau)
+
+        def R_star(self, tau):
+            return self.R_scale(tau)        
+            
+        def mNS(self, tau):        
+            if   self.ns == +1:
+                return self.hard() 
+            elif self.ns ==  0:
+                return self.jet(tau)
+            elif self.ns == -1:
+                return (self.jet(tau) - self.soft(tau)) / 2
     #-----------------------------------
     #           END OF CLASS
     #-----------------------------------
 
 
+
+m = profile(91.2, -1)
+
+scales = m.create_MIT_profile()
+loc = 4
+
+aMIT = []
+a2018 = []
+
+for tau in np.linspace(0, 0.5, 100, endpoint=True):
+    listMIT  = [tau, scales.hard(),  scales.jet(tau), scales.mNS(tau), scales.R_scale(tau), scales.R_star(tau), scales.soft(tau)]
+    list2018 = [tau, m.hard(),  m.jet(tau, loc), m.mNS(tau,loc), m.R_scale(tau, loc), m.R_star(tau, loc), m.soft(tau, loc)]
+
+    aMIT.append(listMIT)
+    a2018.append(list2018)
+
+np.savetxt("aMIT.txt",  aMIT , delimiter='\t')   # export data  
+np.savetxt("a2018.txt",  a2018 , delimiter='\t')   # export data  
 
 
 ###############################################################################
