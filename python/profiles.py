@@ -1,6 +1,6 @@
 import numpy as np 
 import random as rnd
-from param import avec, m_Z
+from param import avec, m_Z, Q
 from scipy.special import polygamma, hyp2f1 
 from special_functions import *
 
@@ -12,6 +12,7 @@ class profile:
 
         self.rnd_seed = rnd_seed
         self.Q = Q
+        self.useStar = False
         
         rnd.seed( self.rnd_seed ) # sets the random seed for the non-central profiles (used in case of parallelization) 
 
@@ -29,7 +30,6 @@ class profile:
             self.dc = 0
             self.dr = 0
             self.ns = 0
-            self.R_max = 100 
         else :     
             if hard_central:
                 self.eH = 1
@@ -47,7 +47,6 @@ class profile:
             self.dc = rnd.uniform(-1., 1.)
             self.dr = rnd.uniform(-1., 1.)
             self.ns = rnd.choice((-1, 0, 1))
-            self.R_max = 100
             
         #-----------------------------------
         self.t0 = self.n0 / Q * 3.**avec
@@ -121,14 +120,12 @@ class profile:
 
     #-----------------------------------    
     def R_star(self, tau, a): 
-        if tau < self.t3[a] :
-            temp_R = (1 + self.eS * (1 - tau/self.t3[a])**2) * self.mrun_R(tau,a)
-        else :
-            temp_R =  self.mrun_R(tau, a)
+        temp_R  = self.R_scale( tau, a)
 
-        temp_RM = self.R_max / ( 1 - avec[a] )
+        if (self.useStar): temp_RM = self.R_scale( self.t1[a] , a)
+        else: temp_RM = temp_R
 
-        if ( temp_R  < temp_RM  ): return temp_R
+        if ( tau  <  self.t1[a]  ): return temp_R
         else: return temp_RM
 
 
@@ -150,6 +147,7 @@ class profile:
         def __init__(self, profile):
 
             self.rnd_seed = profile.rnd_seed
+            self.useStar = profile.useStar
             self.Q = profile.Q
 
             #-----------------------------------
@@ -157,12 +155,11 @@ class profile:
             if (  self.rnd_seed < 0) :
                 self.eH = 1.
                 self.eJ = 0.
-                self.n1 = 5.
-                self.t2 = 0.25
-                self.m0 = 2.
+                self.n1 = 10.
+                self.t2 = 0.295
+                self.m0 = 1.
                 self.R0 = self.m0 * (0.85)
                 self.ns = 0
-                self.R_max = 100 
             else :     
                 self.eH = 2**(rnd.uniform(-1, 1))
                 self.eJ = rnd.uniform(-1, 1)
@@ -171,7 +168,6 @@ class profile:
                 self.m0 = rnd.uniform(1.5, 2.5)
                 self.R0 = self.m0 * (0.85)
                 self.ns = rnd.choice((-1, 0, 1))
-                self.R_max = 100
 
             self.t1 = self.n1 / self.Q
             self.b  = 2* ( self.Q * self.eH - self.m0) / (self.t2 -self.t1 + 0.5)
@@ -184,9 +180,9 @@ class profile:
             return self.Q * self.eH
 
         def soft(self,tau):
-            if (tau < self.t1):
+            if (tau <= self.t1):
                 return self.m0 + self.b  * (tau**2)  / (2*self.t1) 
-            elif (tau > self.t2):
+            elif (tau >= self.t2):
                 return self.Q * self.eH - self.b * (0.5 - tau)**2 / (1-2*self.t2)
             else: 
                 return self.b * tau +self.d
@@ -198,41 +194,48 @@ class profile:
             if (tau <= self.t1):
                 return self.R0 + self.m1 * tau +self.m2 * tau**2
             else : 
-                return self.soft(tau)
+                return self.soft(tau)   
+        
+        def R_star(self, tau): 
+            temp_R  = self.R_scale( tau)
 
-        def R_star(self, tau):
-            return self.R_scale(tau)        
-            
+            if (self.useStar): temp_RM = self.R_scale( self.t1 )
+            else: temp_RM = temp_R
+
+            if ( tau  <  self.t1  ): return temp_R
+            else: return temp_RM
+
         def mNS(self, tau):        
-            if   self.ns == +1:
+            if self.ns == 1:
                 return self.hard() 
-            elif self.ns ==  0:
+            elif self.ns == 0:
                 return self.jet(tau)
-            elif self.ns == -1:
-                return (self.jet(tau) - self.soft(tau)) / 2
+            else:
+                return ( self.soft(tau) + self.jet(tau)) / 2
+
     #-----------------------------------
     #           END OF CLASS
     #-----------------------------------
+###############################################################################
+###############################################################################
+#   Testing code goes here
+
+# rnd_seed = -1
+
+# m = profile( Q, rnd_seed )
 
 
+# mit = m.create_MIT_profile()
 
-m = profile(91.2, -1)
 
-scales = m.create_MIT_profile()
-loc = 4
-
-aMIT = []
-a2018 = []
-
-for tau in np.linspace(0, 0.5, 100, endpoint=True):
-    listMIT  = [tau, scales.hard(),  scales.jet(tau), scales.mNS(tau), scales.R_scale(tau), scales.R_star(tau), scales.soft(tau)]
-    list2018 = [tau, m.hard(),  m.jet(tau, loc), m.mNS(tau,loc), m.R_scale(tau, loc), m.R_star(tau, loc), m.soft(tau, loc)]
-
-    aMIT.append(listMIT)
-    a2018.append(list2018)
-
-np.savetxt("aMIT.txt",  aMIT , delimiter='\t')   # export data  
-np.savetxt("a2018.txt",  a2018 , delimiter='\t')   # export data  
+# for i in range(6):
+#     tau = 0.1 * i
+#     mS = mit.soft(tau)
+#     mJ = mit.jet(tau )
+#     RS = mit.R_scale(tau)
+#     mNS = mit.mNS(tau )
+#     mH = mit.hard()
+#     print(tau, "   ", RS, "   ", mS, "   ", mJ, "   ", mNS )
 
 
 ###############################################################################

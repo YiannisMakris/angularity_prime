@@ -4,7 +4,7 @@ from param import *
 from renormalization_group import *
 import cmath
 
-def set_kernels(a_s, log_accuracy, kJ, jJ, cJ, GJ, gJ, kS, cS, GS, gS, gR):
+def set_kernels(a_s, kJ, jJ, cJ, GJ, gJ, kS, cS, GS, gS, gR, log_accuracy = log_accuracy):
 
     def R(m,m_F):
         return a_s(m) / a_s (m_F)

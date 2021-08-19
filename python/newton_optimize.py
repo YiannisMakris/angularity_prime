@@ -67,7 +67,6 @@ def newton_adaptive( f, x0 = 0.11, y0=0.4,  delta = 10 ):
 
 def newton( f, x0 = 0.11, y0=0.4,  delta = 1 ):
     point = [x0, y0]
-    print(point)
     fC = f( *point )
     evaluations = 1
     for i in range(400):
@@ -78,9 +77,8 @@ def newton( f, x0 = 0.11, y0=0.4,  delta = 1 ):
         point  +=  step
         fC = f( *point)
         evaluations += 1
-        print(point)
         counter = 0
-        if (np.absolute((fC-fC_temp)/fC) < 10**(-6)  ): 
+        if (np.absolute((fC-fC_temp)/fC) < 10**(-8)  ): 
             return [point, True, evaluations]
             break
     return[point, False]
@@ -180,7 +178,7 @@ def scan_interpolation(f, x_min, x_max, y_min, y_max, f_init = 10**6, gridSize =
 
     m = Minuit(inter, *point)
     m.migrad()  # run optimiser
-    minimum= np.array(m.values) 
+    minimum= np.append(np.array(m.values) ,inter(*(m.values)) )
 
     # minimum = GD_adaptive(inter, *point)
     return minimum

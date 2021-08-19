@@ -1,13 +1,13 @@
 import numpy as np
 from numpy import pi, log, exp, real
-from param import m_Z
+from param import m_Z, log_accuracy
 from renormalization_group import b
 
 
 
 #*********  Coupling up to four-loops  *************
 
-def set_alpha_S(a_Z, log_accuracy):
+def set_alpha_S(a_Z, log_accuracy = log_accuracy):
     
     def X(m): 
         return 1 + a_Z * b[0] / (2 * pi) * log(m / m_Z)

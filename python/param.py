@@ -26,7 +26,7 @@ initial_D = 0.1  	# = \bar{\Dellta} (R_\{Delta}, R_{\Delta}) in GeV
 
 RD = 1.5         	# R_\{Delta} in GeV
 
-loc = 0	            # Integer values only!  If "sim_fit = False" then specify which angularity 
+loc = 0	            # Integer values only!  (a=-1.0 : loc = 0 ),  (a=-.75 : loc = 1 ),  (a=-.5 : loc = 2 ),  (a=-.25 : loc = 3 ),  (a=0. : loc = 4 ), (a=.25 : loc = 5 ), (a=.5 : loc = 6 )
 
 avec = np.array(  [-1.0, -0.75, -0.5, -0.25, 0, 0.25, 0.5]  )	# List of values of a 
 
@@ -41,6 +41,3 @@ num_of_bins_all_a  =  np.array(  [7, 7, 7, 8, 9, 9, 8]  )
 bin_min            =  4
 
 num_of_bins        =  9
-
-
-
